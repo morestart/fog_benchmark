@@ -3,7 +3,7 @@ import os
 
 import numpy as np
 from sklearn.metrics import mean_absolute_error
-
+from utils.logger import Logger
 from config.config import Config
 from utils import draw_img
 from utils import load_data
@@ -100,9 +100,10 @@ class Benchmark:
             vis_threshold, true_y, pre_y)
 
         acc = (less_threshold_count_pre / less_threshold_count_true) * 100
-        print("{}米以下真实值数量: {}".format(vis_threshold, less_threshold_count_true))
-        print("与真实值匹配的{}米以下预测值数量: {}".format(vis_threshold, less_threshold_count_pre))
-        print("Acc: {:.3f}%".format(acc))
+        Logger.info("{}米以下真实值数量: {}".format(vis_threshold, less_threshold_count_true))
+        Logger.info("与真实值匹配的{}(上浮动+{})m以下预测值数量: {}".format(vis_threshold, int(vis_threshold * self._ratio),
+                                                     less_threshold_count_pre))
+        Logger.info("Acc: {:.3f}%".format(acc))
         print('=' * 30)
         if draw:
             draw_img.draw_img(true_y, pre_y)
@@ -120,7 +121,7 @@ class Benchmark:
         # print(less_threshold_count_true_list)
         mse = mean_absolute_error(less_threshold_count_true_list, less_threshold_count_pre_list) / 1000
 
-        print("{}米以下数据误差: {:.3f} 公里".format(vis_threshold, mse))
+        Logger.info("{}米以下数据误差: {:.3f} 公里".format(vis_threshold, mse))
 
     def modulation_true_value(self, vis_threshold, subtract_num, true_y, pre_y, draw=False):
         """
@@ -133,9 +134,9 @@ class Benchmark:
         :return:
         """
         print('\n')
-        print('=' * 10 + '开始修正' + '=' * 10)
+        print('=' * 10 + '修正后性能评估结果' + '=' * 10)
         _pre_y = pre_y.tolist()
-        # 统计义共预测出多少个低于阈值的海雾数据
+        # 统计共预测出多少个低于阈值的海雾数据
         after_count = 0
         before_count = 0
         for i in range(len(_pre_y)):
@@ -153,10 +154,22 @@ class Benchmark:
             if k < vis_threshold:
                 after_count += 1
 
+        # pre_y是修正后的能见度预测值, true_y是真实的能见度数值
         self.predict_acc(vis_threshold, true_y, _pre_y, draw)
         self.predict_mae(vis_threshold, true_y, _pre_y)
-        print("修正前共预测出低于{}m的海雾数据{}个".format(vis_threshold, before_count))
-        print("修正后共预测出低于{}m的海雾数据{}个".format(vis_threshold, after_count))
+        # 修正前数据
+        _, vis_before_change = self._count_pre_and_true_below_threshold_num(
+            vis_threshold, true_y, pre_y)
+        # 修正后的数据
+        _, vis_after_change = self._count_pre_and_true_below_threshold_num(vis_threshold, true_y, _pre_y)
+
+        Logger.info("修正前共预测出低于{}m的海雾数据{}个".format(vis_threshold, before_count))
+        Logger.info("修正后共预测出低于{}m的海雾数据{}个".format(vis_threshold, after_count))
+
+        Logger.info("修正前共预测出{}m(上浮动{}m)以下的海雾数据{}个".format(vis_threshold,
+                                                    int(vis_threshold * self._ratio), vis_before_change))
+        Logger.info("修正后预测出{}m(上浮动{}m)以下的海雾数据{}个".format(vis_threshold,
+                                                   int(vis_threshold * self._ratio), vis_after_change))
 
 
 if __name__ == '__main__':
