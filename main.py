@@ -1,5 +1,5 @@
 import os
-
+from numpy.random import seed
 from benchmark.benchmark import Benchmark
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -9,6 +9,7 @@ if __name__ == '__main__':
     ratio = .3
     modulation_value = 2000
 
+    seed(5)
     benchmark = Benchmark(ratio)
     _, y, pre = benchmark.predict_()
 
