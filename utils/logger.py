@@ -5,22 +5,22 @@ class Logger:
     END = '\033[0m'
 
     @staticmethod
-    def info(info):
+    def info1(info):
         try:
             print(Logger.OK + info + Logger.END)
         except UnicodeEncodeError:
-            Logger.warn("[ERROR] Not found chinese font, you must install chinese font")
+            Logger.info3("[ERROR] Not found chinese font, you must install chinese font")
 
     @staticmethod
-    def warn(info):
+    def info2(info):
         try:
             print(Logger.WARNING + info + Logger.END)
         except UnicodeEncodeError:
-            Logger.warn("[ERROR] Not found chinese font, you must install chinese font, if not")
+            Logger.info3("[ERROR] Not found chinese font, you must install chinese font, if not")
 
     @staticmethod
-    def error(info):
+    def info3(info):
         try:
             print(Logger.FAIL + info + Logger.END)
         except UnicodeEncodeError:
-            Logger.warn("[ERROR] Not found chinese font, you must install chinese font, if not")
+            Logger.info3("[ERROR] Not found chinese font, you must install chinese font, if not")
