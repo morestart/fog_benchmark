@@ -3,12 +3,13 @@ import os
 
 import numpy as np
 from sklearn.metrics import mean_absolute_error
-from utils.logger import Logger
+
 from config.config import Config
 from utils import draw_img
 from utils import load_data
 from utils import load_model_
 from utils import split_data
+from utils.logger import Logger
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
@@ -53,7 +54,7 @@ class Benchmark:
 
     def _count_pre_and_true_below_threshold_num(self, vis_threshold, true_y, pre_y):
         """
-        查找需要的部分数据
+        查找真实值和预报值+loss都低于设定能见度的数据（该方法会匹配真实值,只有真实值和预报纸均低于设定能见度才会统计）
         :param vis_threshold:
         :return: int, int
         """
@@ -69,6 +70,19 @@ class Benchmark:
                     less_threshold_count_pre_num += 1
 
         return less_threshold_count_true_num, less_threshold_count_pre_num
+
+    def get_num_below_threshold_vis(self, vis_threshold, _pre_y):
+        """
+        获取所有的预报数据低于设定能见度的（该方法不匹配真实值）
+        :param _pre_y:
+        :param vis_threshold:
+        :return:
+        """
+        count = 0
+        for i in range(_pre_y.shape[0]):
+            if _pre_y[i] < vis_threshold + vis_threshold * self._ratio:
+                count += 1
+        return count
 
     @staticmethod
     def _get_threshold_data(vis_threshold, true_y, pre_y):
@@ -100,10 +114,10 @@ class Benchmark:
             vis_threshold, true_y, pre_y)
 
         acc = (less_threshold_count_pre / less_threshold_count_true) * 100
-        Logger.info("{}米以下真实值数量: {}".format(vis_threshold, less_threshold_count_true))
-        Logger.info("与真实值匹配的{}(上浮动+{})m以下预测值数量: {}".format(vis_threshold, int(vis_threshold * self._ratio),
-                                                     less_threshold_count_pre))
-        Logger.info("Acc: {:.3f}%".format(acc))
+        Logger.info1("{}米以下真实值数量: {}".format(vis_threshold, less_threshold_count_true))
+        Logger.info1("与真实值匹配的{}(上浮动+{})m以下预测值数量: {}".format(vis_threshold, int(vis_threshold * self._ratio),
+                                                            less_threshold_count_pre))
+        Logger.info1("Acc: {:.3f}%".format(acc))
         print('=' * 30)
         if draw:
             draw_img.draw_img(true_y, pre_y)
@@ -121,7 +135,7 @@ class Benchmark:
         # print(less_threshold_count_true_list)
         mse = mean_absolute_error(less_threshold_count_true_list, less_threshold_count_pre_list) / 1000
 
-        Logger.info("{}米以下数据误差: {:.3f} 公里".format(vis_threshold, mse))
+        Logger.info3("{}米以下数据误差: {:.3f} 公里".format(vis_threshold, mse))
 
     def modulation_true_value(self, vis_threshold, subtract_num, true_y, pre_y, draw=False):
         """
@@ -139,6 +153,7 @@ class Benchmark:
         # 统计共预测出多少个低于阈值的海雾数据
         after_count = 0
         before_count = 0
+
         for i in range(len(_pre_y)):
             # 如果真实值大于设定的阈值就减去设定的误差值
             # true_y[i] = [1000] 单个元素是个列表
@@ -158,18 +173,18 @@ class Benchmark:
         self.predict_acc(vis_threshold, true_y, _pre_y, draw)
         self.predict_mae(vis_threshold, true_y, _pre_y)
         # 修正前数据
-        _, vis_before_change = self._count_pre_and_true_below_threshold_num(
-            vis_threshold, true_y, pre_y)
+        vis_before_change = self.get_num_below_threshold_vis(
+            vis_threshold, pre_y)
         # 修正后的数据
-        _, vis_after_change = self._count_pre_and_true_below_threshold_num(vis_threshold, true_y, _pre_y)
+        vis_after_change = self.get_num_below_threshold_vis(vis_threshold, _pre_y)
 
-        Logger.info("修正前共预测出低于{}m的海雾数据{}个".format(vis_threshold, before_count))
-        Logger.info("修正后共预测出低于{}m的海雾数据{}个".format(vis_threshold, after_count))
+        Logger.info1("修正前共预测出低于{}m的海雾数据{}个".format(vis_threshold, before_count))
+        Logger.info2("修正后共预测出低于{}m的海雾数据{}个".format(vis_threshold, after_count))
 
-        Logger.info("修正前共预测出{}m(上浮动{}m)以下的海雾数据{}个".format(vis_threshold,
-                                                    int(vis_threshold * self._ratio), vis_before_change))
-        Logger.info("修正后预测出{}m(上浮动{}m)以下的海雾数据{}个".format(vis_threshold,
-                                                   int(vis_threshold * self._ratio), vis_after_change))
+        Logger.info1("修正前预测出{}m(上浮动{}m)以下的海雾数据{}个".format(vis_threshold,
+                                                          int(vis_threshold * self._ratio), vis_before_change))
+        Logger.info2("修正后预测出{}m(上浮动{}m)以下的海雾数据{}个".format(vis_threshold,
+                                                          int(vis_threshold * self._ratio), vis_after_change))
 
 
 if __name__ == '__main__':
