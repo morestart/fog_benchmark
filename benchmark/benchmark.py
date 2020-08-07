@@ -50,6 +50,7 @@ class Benchmark:
         _x, _y = self._get_structure_data()
         pre_data = self._pre_model.predict(_x)
         pre_data = self._y_scaler.inverse_transform(pre_data)
+        # print(pre_data)
         return _x, _y, pre_data
 
     def _count_pre_and_true_below_threshold_num(self, vis_threshold, true_y, pre_y):
@@ -121,6 +122,7 @@ class Benchmark:
         print('=' * 30)
         if draw:
             draw_img.draw_img(true_y, pre_y)
+        return less_threshold_count_pre, less_threshold_count_true
 
     def predict_mae(self, vis_threshold, true_y, pre_y):
         """
@@ -185,15 +187,16 @@ class Benchmark:
                                                           int(vis_threshold * self._ratio), vis_before_change))
         Logger.info2("修正后预测出{}m(上浮动{}m)以下的海雾数据{}个".format(vis_threshold,
                                                           int(vis_threshold * self._ratio), vis_after_change))
+        return vis_before_change
 
 
 if __name__ == '__main__':
-    _threshold = 5000
+    _threshold = 2000
     _modulation_value = 500
-    _ratio = .3
+    _ratio = .5
 
     benchmark = Benchmark(_ratio)
     _, y, pre = benchmark.predict_()
     benchmark.predict_acc(_threshold, y, pre)
-    benchmark.predict_mae(_threshold, y, pre)
+    # benchmark.predict_mae(_threshold, y, pre)
     benchmark.modulation_true_value(_threshold, _modulation_value, y, pre)
