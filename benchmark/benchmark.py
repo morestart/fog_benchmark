@@ -1,4 +1,4 @@
-# TODO 去掉
+
 import os
 
 import numpy as np
@@ -44,7 +44,8 @@ class Benchmark:
         """
         _x, _y = self._process_data()
         _x = split_data.split_shift_data(Config.step, _x)
-        return _x, _y[Config.step - 1:]
+
+        return _x, _y[Config.step:]
 
     def predict_(self):
         _x, _y = self._get_structure_data()
